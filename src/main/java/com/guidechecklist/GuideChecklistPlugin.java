@@ -11,6 +11,7 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import java.awt.image.BufferedImage;
+import com.google.gson.Gson;
 
 @Slf4j
 @PluginDescriptor(
@@ -29,12 +30,15 @@ public class GuideChecklistPlugin extends Plugin
 	private GuideChecklistPanel panel;
 	private NavigationButton navButton;
 
+	@Inject
+	private Gson gson;
+
 	@Override
 	protected void startUp() throws Exception
 	{
 		log.info("B0aty HCIM Guide Checklist started!");
 
-		panel = new GuideChecklistPanel();
+		panel = new GuideChecklistPanel(gson);
 
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/icon.png");
 

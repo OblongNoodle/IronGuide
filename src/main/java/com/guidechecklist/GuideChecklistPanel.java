@@ -18,12 +18,14 @@ public class GuideChecklistPanel extends PluginPanel
 {
     private static final File CHECKLIST_FILE = new File(RuneLite.RUNELITE_DIR, "b0aty-checklist.json");
 
-    private final Gson gson = new Gson();
     private Map<String, Boolean> checklistState;
 
-    public GuideChecklistPanel()
+    private final Gson gson;
+
+    public GuideChecklistPanel(Gson gson)
     {
         super();
+        this.gson = gson;
         loadChecklistState();
 
         // Title
@@ -3398,8 +3400,6 @@ public class GuideChecklistPanel extends PluginPanel
 
     private void loadChecklistState()
     {
-        System.out.println("RuneLite directory: " + RuneLite.RUNELITE_DIR.getAbsolutePath());
-        System.out.println("Checklist file: " + CHECKLIST_FILE.getAbsolutePath());
         try
         {
             if (CHECKLIST_FILE.exists())
