@@ -1,37 +1,42 @@
 package com.guidechecklist;
 
-import net.runelite.client.config.ConfigManager;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import net.runelite.client.RuneLite;
 import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GuideChecklistPanel extends PluginPanel
 {
-    private static final String CONFIG_GROUP = "b0atyhcimguide";
-    private static final String SCROLL_POSITION_KEY = "scrollPosition";
+    private static final File CHECKLIST_FILE = new File(RuneLite.RUNELITE_DIR, "b0aty-checklist.json");
 
-    private final ConfigManager configManager;
+    private final Gson gson = new Gson();
+    private Map<String, Boolean> checklistState;
 
-    public GuideChecklistPanel(ConfigManager configManager)
+    public GuideChecklistPanel()
     {
-        super();  // Use default wrap=true
-        this.configManager = configManager;
+        super();
+        loadChecklistState();
 
         // Title
         JLabel title = new JLabel("<html><center>B0aty's<br>HCIM Guide V3</center></html>");
         title.setFont(new Font("Arial", Font.BOLD, 14));
         add(title);
 
-        // Add spacing
         add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Load sample tasks
-        loadSampleTasks();
+        loadAllTasks();
     }
 
-    private void loadSampleTasks()
+    private void loadAllTasks()
     {
         // Add some sample sections and tasks
         addSection("Starting out");
@@ -3375,52 +3380,87 @@ public class GuideChecklistPanel extends PluginPanel
 
     private void addSection(String sectionName)
     {
-        // Add spacing before section
         add(Box.createRigidArea(new Dimension(0, 10)));
 
         JLabel sectionLabel = new JLabel(sectionName);
         sectionLabel.setFont(new Font("Arial", Font.BOLD, 12));
         add(sectionLabel);
 
-        // Add line separator
         JSeparator separator = new JSeparator();
         add(separator);
     }
 
     private void addTask(String taskId, String taskText)
     {
-        TaskCheckbox taskCheckbox = new TaskCheckbox(taskId, taskText, configManager);
+        TaskCheckbox taskCheckbox = new TaskCheckbox(taskId, taskText, this);
         add(taskCheckbox);
     }
 
-    // Inner class for individual task checkboxes
+    private void loadChecklistState()
+    {
+        System.out.println("RuneLite directory: " + RuneLite.RUNELITE_DIR.getAbsolutePath());
+        System.out.println("Checklist file: " + CHECKLIST_FILE.getAbsolutePath());
+        try
+        {
+            if (CHECKLIST_FILE.exists())
+            {
+                String json = new String(Files.readAllBytes(CHECKLIST_FILE.toPath()));
+                Type type = new TypeToken<HashMap<String, Boolean>>(){}.getType();
+                checklistState = gson.fromJson(json, type);
+            }
+
+            if (checklistState == null)
+            {
+                checklistState = new HashMap<>();
+            }
+        }
+        catch (IOException e)
+        {
+            checklistState = new HashMap<>();
+        }
+    }
+
+    private void saveChecklistState()
+    {
+        try
+        {
+            String json = gson.toJson(checklistState);
+            Files.write(CHECKLIST_FILE.toPath(), json.getBytes());
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean getTaskState(String taskId)
+    {
+        return checklistState.getOrDefault(taskId, false);
+    }
+
+    private void setTaskState(String taskId, boolean checked)
+    {
+        checklistState.put(taskId, checked);
+        saveChecklistState();
+    }
+
     private static class TaskCheckbox extends JCheckBox
     {
-        private static final String CONFIG_GROUP = "b0atyhcimguide";
         private final String taskId;
-        private final ConfigManager configManager;
+        private final GuideChecklistPanel panel;
 
-        public TaskCheckbox(String taskId, String text, ConfigManager configManager)
+        public TaskCheckbox(String taskId, String text, GuideChecklistPanel panel)
         {
             super("<html>" + text + "</html>");
             this.taskId = taskId;
-            this.configManager = configManager;
+            this.panel = panel;
 
-            // Align checkbox to top of text
             setVerticalAlignment(SwingConstants.TOP);
             setVerticalTextPosition(SwingConstants.TOP);
 
-            // Load saved state
-            Boolean savedState = configManager.getConfiguration(CONFIG_GROUP, taskId, Boolean.class);
-            if (savedState != null)
-            {
-                setSelected(savedState);
-            }
+            setSelected(panel.getTaskState(taskId));
 
-            // Save state when changed
-            addActionListener(e -> {
-                configManager.setConfiguration(CONFIG_GROUP, taskId, isSelected());
-            });
+            addActionListener(e -> panel.setTaskState(taskId, isSelected()));
 
             setFocusPainted(false);
         }

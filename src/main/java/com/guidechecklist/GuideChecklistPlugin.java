@@ -26,9 +26,6 @@ public class GuideChecklistPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	@Inject
-	private ConfigManager configManager;
-
 	private GuideChecklistPanel panel;
 	private NavigationButton navButton;
 
@@ -37,7 +34,7 @@ public class GuideChecklistPlugin extends Plugin
 	{
 		log.info("B0aty HCIM Guide Checklist started!");
 
-		panel = new GuideChecklistPanel(configManager);
+		panel = new GuideChecklistPanel();
 
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/icon.png");
 
@@ -58,9 +55,4 @@ public class GuideChecklistPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 	}
 
-	@Provides
-	GuideChecklistConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(GuideChecklistConfig.class);
-	}
 }
